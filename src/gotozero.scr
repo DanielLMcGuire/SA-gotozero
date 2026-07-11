@@ -1,0 +1,43 @@
+{$CLEO .cs}
+int key = read_int_from_ini_file "cleo\gotozero.ini" "Controls" "Activate"
+int mem0chk = 0x20010002
+int mem1chk = 0x730000AB
+
+while true
+    wait 0
+    if
+        is_key_pressed key
+    then
+        if
+            not is_game_version_original // check exe for match
+        then
+            print_help_string "VERSION_MISMATCH"
+            terminate_this_script
+        end
+        int main = get_script_struct_named 'MAIN'
+        if
+            main > 0
+        then
+            int currentIpAddr = main + 0x14
+            int baseIpOffset = -0x046E04
+            int baseIpAddr = currentIpAddr + baseIpOffset
+            int mem0 = read_memory baseIpAddr 4 false
+            int mem1 = read_memory_with_offset baseIpAddr 4 4
+            if and // check scm for match
+                mem0 == mem0chk
+                mem1 == mem1chk
+            then    
+                write_memory currentIpAddr 4 baseIpAddr false
+                terminate_this_script
+            else
+                print_help_string "MAGIC_NOT_EQUAL"
+                terminate_this_script
+            end
+        else
+            print_help_string "SCRIPT_NOT_FOUND"
+            terminate_this_script
+        end
+    end
+end
+
+terminate_this_script

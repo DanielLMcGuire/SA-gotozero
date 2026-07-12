@@ -1,5 +1,6 @@
 {$CLEO .cs}
 int key = read_int_from_ini_file "cleo\gotozero.ini" "Controls" "Activate"
+int debug = read_int_from_ini_file "cleo\gotozero.ini" "Advanced" "Debug"
 int mem0chk = 0x20010002
 int mem1chk = 0x730000AB
 
@@ -8,35 +9,42 @@ while true
     if
         is_key_pressed key
     then
+        int mainPtr = get_script_struct_named 'MAIN'
         if
-            not is_game_version_original // check exe for match
+            mainPtr > 0
         then
-            print_help_string "VERSION_MISMATCH"
-            terminate_this_script
-        end
-        int main = get_script_struct_named 'MAIN'
-        if
-            main > 0
-        then
-            int currentIpAddr = main + 0x14
-            int baseIpAddr = main + -0x046DF0
-            int mem0 = read_memory baseIpAddr 4 false
-            int mem1 = read_memory_with_offset baseIpAddr 4 4
+            int currentInstructionPtrPtr = mainPtr + 0x14
+            int baseInstructionPtr = mainPtr + -0x046DF0
+            int mem0 = read_memory baseInstructionPtr 4 false
+            int mem1 = read_memory_with_offset baseInstructionPtr 4 4
+            if
+                debug == true
+            then
+                print_help_formatted "%#X" baseInstructionPtr  
+                wait 3550
+            end
             if and // check scm for match
                 mem0 == mem0chk
                 mem1 == mem1chk
-            then    
-                write_memory currentIpAddr 4 baseIpAddr false
+            then
+                write_memory currentInstructionPtrPtr 4 baseInstructionPtr false
                 terminate_this_script
             else
-                print_help_string "MAGIC_NOT_EQUAL"
-                terminate_this_script
+                handleError("MAGIC_NOT_EQUAL")
             end
         else
-            print_help_string "SCRIPT_NOT_FOUND"
+            handleError("SCRIPT_NOT_FOUND")
             terminate_this_script
         end
     end
 end
 
 terminate_this_script
+
+function handleError(errMsg: longstring)
+    wait 200
+    print_help_string "gotozero_ERROR"
+    wait 2550
+    print_help_string errMsg
+    terminate_this_script
+end

@@ -19,8 +19,7 @@ while true
             main > 0
         then
             int currentIpAddr = main + 0x14
-            int baseIpOffset = -0x046E04
-            int baseIpAddr = currentIpAddr + baseIpOffset
+            int baseIpAddr = main + -0x046DF0
             int mem0 = read_memory baseIpAddr 4 false
             int mem1 = read_memory_with_offset baseIpAddr 4 4
             if and // check scm for match
